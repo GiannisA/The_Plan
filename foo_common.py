@@ -22,20 +22,22 @@ ANALOG = ('ABS_X',
           'ABS_RZ')
 
 
-SYMMETRIC = (True,
-             True,
-             True,
-             True,
-             False,
-             False)
+SYMMETRIC = {'ABS_RX': True,
+             'ABS_RY': True,
+             'ABS_RZ': False,
+             'ABS_X':  True,
+             'ABS_Y':  True,
+             'ABS_Z':  False}
+
+MINMAX = {'ABS_RX': [-32767, 32767],
+          'ABS_RY': [-32767, 32767],
+          'ABS_RZ': [0, 255],
+          'ABS_X': [-32767, 32767],
+          'ABS_Y': [-32767, 32767],
+          'ABS_Z': [0, 255]}
 
 
-MINMAX = ((-32767, 32767),
-          (-32767, 32767),
-          (-32767, 32767),
-          (-32767, 32767),
-          (0, 255),
-          (0, 255))
+    
 
 
 

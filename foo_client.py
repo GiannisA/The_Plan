@@ -38,40 +38,38 @@ class AxisInfo:
     
     def get_val_cur(self):
         return self.val_cur
+
            
-def normalise_axis_info(range):
-    axis_info = []
-    for i in foo.SIZE:
-        axis_info.append(AxisInfo(foo.MINMAX[i][0],foo.MINMAX[i][1],-foo.SYMMETRIC[i]*range/(1+foo.SYMMETRIC[i]),range/(1+foo.SYMMETRIC[i]))
+def init_axis_info(range):
+    axis_info = {}
+    for axis in foo.ANALOG:
+        axis_info[axis] = (AxisInfo(foo.MINMAX[axis][0],foo.MINMAX[axis][1],-foo.SYMMETRIC[axis]*range/(1+foo.SYMMETRIC[axis]),range/(1+foo.SYMMETRIC[axis])))
     return axis_info
 
-def main_foo(gamepad, normalised_axis):
-    while True:
-        events = gamepad.read()
-        for event in events:
-            if 'Absolute' in event.ev_type:
-                if event.code in analog: # and abs(event.state) > 2000:
-                    val_new = normalised_axis[event.code].update(event.state)
-                    print  string.join([x[0]+":"+str(x[1].get_val_cur()) for x in normalised_axis.iteritems()],";")
-            elif 'Key' in event.ev_type:
-                print "--",event.code,'-',event.state
-            elif 'Sync' in event.ev_type:
-                pass
-            else:
-                print "-----",event.ev_type
-        time.sleep(0.001)
+
+def read_gamepad(gamepad, axis_info, cur_vals):
+    events = gamepad.read()
+    for event in events:
+        if 'Absolute' in event.ev_type:
+            if event.code in foo.ANALOG: # and abs(event.state) > 2000:
+                val_new = axis_info[event.code].transform(event.state)
+                cur_vals[event.code] = val_new
+        elif 'Key' in event.ev_type:
+            pass
+        elif 'Sync' in event.ev_type:
+            pass
+        else:
+            print "-----",event.ev_type
 
 
-def update_values():
-    pass
+def create_msg(cur_vals, deadzone):
+    return string.join([str((deadzone < cur_vals[x])*cur_vals[x]) for x in foo.ANALOG],";")
 
 
-def create_msg():
-    return "=== MESSAGE ==="
+gamepad = inputs.devices.gamepads[0]
 
-
-address = 'localhost'
-port = 10000
+address = '127.0.0.1'
+port = 9999
 
 freq_1 = 60 # Hz
 freq_2 = 120 # Hz
@@ -80,15 +78,25 @@ period_1 = 1.0/freq_1
 period_2 = 1.0/freq_2
 
 
+deadzonePerc = 0.1
+span = 100
+axis_info = init_axis_info(span)
+cur_vals = {'ABS_RX': 0,
+            'ABS_RY': 0,
+            'ABS_RZ': 0,
+            'ABS_X':  0,
+            'ABS_Y':  0,
+            'ABS_Z':  0}
 
 
+deadzone = deadzonePerc * span
 t0 = time.clock()
 t_1 = t0
-
 while True:
     t = time.clock()
     if t - t_1 > period_1:
         t_1 = t
+        message = create_msg(cur_vals,deadzone)
         # Create a TCP/IP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Connect the socket to the port where the server is listening
@@ -96,7 +104,7 @@ while True:
         sock.connect(server_address)
         try:
             # Send data
-            message = create_msg()
+            message = create_msg(cur_vals, deadzone)
             print >> sys.stderr, 'sending "%s"' % message
             sock.sendall(message)
             response = sock.recv(1)
@@ -105,6 +113,6 @@ while True:
         finally:
             print >> sys.stderr, 'closing socket'
             sock.close()
-    update_values()
+    read_gamepad(gamepad, axis_info, cur_vals)
 
 
