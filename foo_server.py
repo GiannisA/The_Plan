@@ -7,9 +7,20 @@ Created on Thu Jun 08 19:42:15 2017
 
 import socket
 import sys
+import RPi.GPIO as GPIO
 
-address = '127.0.0.1'
+import foo_common as foo
+
+address = "192.168.1.32"
 port = 9999
+
+duty_cycle = 100
+
+# Prepare PWMs
+GPIO.setmode(GPIO.BCM)
+[GPIO.setup(pin, GPIO.OUT) for pin in foo.GPIOS]
+PWMs = [GPIO.PWM(pin, duty_cycle) for pin in foo.GPIOS]
+[pwm.start(0) for pwm in PWMs]
 
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -29,7 +40,11 @@ while True:
         else:
             connection.sendall("0")
             data = "NULL"
-        print >> sys.stderr, data
+        vals = [int(x) for x in data.split(';')]
+	for i in range(6):
+           PWMs[i].ChangeDutyCycle(abs(vals[i]))
+
+#        print >> sys.stderr, data
     finally:
         # Clean up the connection
         connection.close()
