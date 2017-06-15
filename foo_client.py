@@ -38,12 +38,19 @@ class AxisInfo:
     
     def get_val_cur(self):
         return self.val_cur
+		
+	def set_multiplier(self, multipier):
+		self.multipier = multipier
+
+	def get_multiplier(self):
+		return self.multipier
 
            
 def init_axis_info(range):
     axis_info = {}
     for axis in foo.ANALOG:
         axis_info[axis] = (AxisInfo(foo.MINMAX[axis][0],foo.MINMAX[axis][1],-foo.SYMMETRIC[axis]*range/(1+foo.SYMMETRIC[axis]),range/(1+foo.SYMMETRIC[axis])))
+		axis_info[axis].set_multiplier(axis_info[axis].get_multipier()*(1+foo.SYMMETRIC)
     return axis_info
 
 
@@ -68,7 +75,7 @@ def create_msg(cur_vals, deadzone):
 
 gamepad = inputs.devices.gamepads[0]
 
-address = '127.0.0.1'
+address = '192.168.1.32'
 port = 9999
 
 freq_1 = 60 # Hz
